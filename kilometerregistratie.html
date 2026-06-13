@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kilometerregistratie - Silva Advies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blauw: #1E3A6E;
+    --amber: #F5A623;
+    --achtergrond: #FAF8F4;
+    --wit: #ffffff;
+    --grijs: #6b7280;
+    --rand: #e2e0db;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--achtergrond);
+    color: #2b2b2b;
+    margin: 0;
+    padding: 20px;
+  }
+  h1, h2, h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    color: var(--blauw);
+    margin-top: 0;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .card {
+    background: var(--wit);
+    border: 1px solid var(--rand);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--blauw);
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+  .stat-label {
+    color: var(--grijs);
+    font-size: 0.85em;
+    margin-top: 4px;
+  }
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 0.9em;
+  }
+  input, select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--rand);
+    border-radius: 6px;
+    font-size: 1em;
+    font-family: inherit;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .field { display: flex; flex-direction: column; }
+  .field-with-button { position: relative; }
+  .mini-btn {
+    margin-top: 4px;
+    background: none;
+    border: 1px solid var(--rand);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.8em;
+    cursor: pointer;
+    color: var(--blauw);
+  }
+  .mini-btn:hover { background: var(--achtergrond); }
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .checkbox-row input { width: auto; }
+  button.primary {
+    background: var(--blauw);
+    color: var(--wit);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1em;
+  }
+  button.primary:hover { background: #16294f; }
+  button.amber {
+    background: var(--amber);
+    color: #2b2b2b;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.amber:hover { background: #e0951a; }
+  button.secondary {
+    background: var(--wit);
+    color: var(--blauw);
+    border: 1px solid var(--blauw);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.secondary:hover { background: var(--achtergrond); }
+  button.danger {
+    background: none;
+    color: #b3261e;
+    border: 1px solid #b3261e;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.85em;
+    cursor: pointer;
+  }
+  button.danger:hover { background: #fdeceb; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--rand);
+    font-size: 0.92em;
+  }
+  th { color: var(--grijs); font-weight: 600; }
+  .month-header {
+    background: var(--achtergrond);
+    font-weight: 700;
+    color: var(--blauw);
+  }
+  .month-header td { padding: 10px 6px; }
+  details > summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--blauw);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.17em;
+    margin-bottom: 10px;
+  }
+  .klant-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr auto;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: end;
+  }
+  .actions-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .right { text-align: right; }
+  .empty-msg {
+    color: var(--grijs);
+    font-style: italic;
+    padding: 12px 0;
+  }
+  hr.sep {
+    border: none;
+    border-top: 1px solid var(--rand);
+    margin: 16px 0;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Kilometerregistratie</h1>
+
+  <!-- Statistieken -->
+  <div class="card">
+    <div class="stats">
+      <div>
+        <div class="stat-value" id="stat-km">0</div>
+        <div class="stat-label">Kilometers dit jaar</div>
+      </div>
+      <div>
+        <div class="stat-value" id="stat-vergoeding">€ 0,00</div>
+        <div class="stat-label">Vergoeding dit jaar</div>
+      </div>
+      <div>
+        <div class="stat-value" id="stat-ritten">0</div>
+        <div class="stat-label">Ritten dit jaar</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Adresboek -->
+  <div class="card">
+    <details>
+      <summary>Adresboek &amp; instellingen</summary>
+
+      <div class="field">
+        <label for="thuisadres">Thuisadres</label>
+        <input type="text" id="thuisadres" placeholder="Straat en huisnummer, plaats">
+      </div>
+
+      <div class="field" style="margin-top: 10px;">
+        <label for="tarief">Kilometertarief (euro per km)</label>
+        <input type="number" id="tarief" step="0.01" min="0" placeholder="0.23">
+      </div>
+
+      <hr class="sep">
+
+      <h3 style="font-size: 1em;">Klanten</h3>
+      <div id="klanten-lijst"></div>
+
+      <div class="klant-row">
+        <div class="field">
+          <label for="nieuwe-klant-naam">Naam</label>
+          <input type="text" id="nieuwe-klant-naam" placeholder="Klantnaam">
+        </div>
+        <div class="field">
+          <label for="nieuwe-klant-adres">Adres</label>
+          <input type="text" id="nieuwe-klant-adres" placeholder="Straat en huisnummer, plaats">
+        </div>
+        <div>
+          <button class="secondary" id="klant-submit-btn" onclick="klantToevoegen()">Toevoegen</button>
+          <button class="secondary" id="klant-cancel-btn" style="display:none" onclick="klantBewerkenAnnuleren()">Annuleren</button>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- Rit toevoegen -->
+  <div class="card">
+    <h2>Nieuwe rit</h2>
+    <div class="form-grid">
+      <div class="field">
+        <label for="rit-datum">Datum</label>
+        <input type="date" id="rit-datum">
+      </div>
+      <div class="field">
+        <label for="rit-doel">Klant / doel</label>
+        <input type="text" id="rit-doel" list="klanten-datalist" placeholder="Klantnaam of omschrijving" oninput="opDoelInvoer()">
+        <datalist id="klanten-datalist"></datalist>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="field field-with-button">
+        <label for="rit-van">Van</label>
+        <input type="text" id="rit-van" placeholder="Adres van vertrek" oninput="routeVoorstel()">
+        <button type="button" class="mini-btn" onclick="vulThuis('rit-van')">Gebruik thuisadres</button>
+      </div>
+      <div class="field field-with-button">
+        <label for="rit-naar">Naar</label>
+        <input type="text" id="rit-naar" placeholder="Adres van bestemming" oninput="routeVoorstel()">
+        <button type="button" class="mini-btn" onclick="vulThuis('rit-naar')">Gebruik thuisadres</button>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label for="rit-km">Kilometers (enkele reis)</label>
+        <input type="number" id="rit-km" min="0" step="0.1" placeholder="0">
+      </div>
+      <div class="field" style="justify-content: center;">
+        <div class="checkbox-row" style="margin-top: 24px;">
+          <input type="checkbox" id="rit-retour">
+          <label for="rit-retour" style="margin-bottom: 0;">Retour (kilometers worden verdubbeld)</label>
+        </div>
+      </div>
+    </div>
+    <div class="actions-row">
+      <button class="primary" id="rit-submit-btn" onclick="ritToevoegen()">Rit toevoegen</button>
+      <button class="secondary" id="rit-cancel-btn" style="display:none" onclick="bewerkenAnnuleren()">Annuleren</button>
+    </div>
+  </div>
+
+  <!-- Overzicht -->
+  <div class="card">
+    <h2>Overzicht per maand</h2>
+    <div id="overzicht"></div>
+  </div>
+
+  <!-- Export/Import -->
+  <div class="card">
+    <h2>Back-up &amp; export</h2>
+    <div class="actions-row">
+      <button class="amber" onclick="exportJSON()">Export JSON (back-up)</button>
+      <button class="secondary" onclick="document.getElementById('import-file').click()">Import JSON</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
+      <button class="amber" onclick="exportCSV()">Export CSV</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- Opslag ----------
+  function laad(sleutel, standaard) {
+    try {
+      const ruw = localStorage.getItem(sleutel);
+      return ruw ? JSON.parse(ruw) : standaard;
+    } catch (e) {
+      return standaard;
+    }
+  }
+
+  function bewaar(sleutel, waarde) {
+    localStorage.setItem(sleutel, JSON.stringify(waarde));
+  }
+
+  let ritten = laad('km-ritten', []);
+  let klanten = laad('km-klanten', []);
+  let routes = laad('km-routes', {});
+  let instellingen = laad('km-instellingen', { thuisadres: '', tarief: 0.23 });
+
+  // ---------- Helpers ----------
+  function routeKey(van, naar) {
+    return (van.trim() + '|' + naar.trim()).toLowerCase();
+  }
+
+  function formatGeld(bedrag) {
+    return '€ ' + bedrag.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatKm(km) {
+    return km.toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  }
+
+  function formatDatum(isoDatum) {
+    const d = new Date(isoDatum);
+    return d.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  function maandNaam(jaar, maand) {
+    const namen = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+    return namen[maand] + ' ' + jaar;
+  }
+
+  // ---------- Instellingen ----------
+  function instellingenLaden() {
+    document.getElementById('thuisadres').value = instellingen.thuisadres || '';
+    document.getElementById('tarief').value = instellingen.tarief != null ? instellingen.tarief : 0.23;
+  }
+
+  document.getElementById('thuisadres').addEventListener('change', () => {
+    instellingen.thuisadres = document.getElementById('thuisadres').value.trim();
+    bewaar('km-instellingen', instellingen);
+  });
+
+  document.getElementById('tarief').addEventListener('change', () => {
+    const waarde = parseFloat(document.getElementById('tarief').value);
+    instellingen.tarief = isNaN(waarde) ? 0.23 : waarde;
+    bewaar('km-instellingen', instellingen);
+    renderOverzicht();
+  });
+
+  function vulThuis(veldId) {
+    document.getElementById(veldId).value = instellingen.thuisadres || '';
+    routeVoorstel();
+  }
+
+  // ---------- Adresboek / klanten ----------
+  function klantenRender() {
+    const lijst = document.getElementById('klanten-lijst');
+    if (klanten.length === 0) {
+      lijst.innerHTML = '<p class="empty-msg">Nog geen klanten toegevoegd.</p>';
+    } else {
+      lijst.innerHTML = klanten.map((k, i) => `
+        <div class="klant-row">
+          <div><strong>${escapeHtml(k.naam)}</strong></div>
+          <div>${escapeHtml(k.adres)}</div>
+          <div>
+            <button class="secondary" onclick="klantBewerken(${i})">Bewerk</button>
+            <button class="danger" onclick="klantVerwijderen(${i})">Verwijder</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    const datalist = document.getElementById('klanten-datalist');
+    datalist.innerHTML = klanten.map(k => `<option value="${escapeHtml(k.naam)}"></option>`).join('');
+  }
+
+  let bewerkKlantIndex = null;
+
+  function klantToevoegen() {
+    const naam = document.getElementById('nieuwe-klant-naam').value.trim();
+    const adres = document.getElementById('nieuwe-klant-adres').value.trim();
+    if (!naam || !adres) {
+      alert('Vul zowel naam als adres in.');
+      return;
+    }
+    if (bewerkKlantIndex !== null) {
+      klanten[bewerkKlantIndex] = { naam, adres };
+    } else {
+      klanten.push({ naam, adres });
+    }
+    bewaar('km-klanten', klanten);
+    klantBewerkenAnnuleren();
+    klantenRender();
+  }
+
+  function klantBewerken(index) {
+    const klant = klanten[index];
+    if (!klant) return;
+    bewerkKlantIndex = index;
+    document.getElementById('nieuwe-klant-naam').value = klant.naam;
+    document.getElementById('nieuwe-klant-adres').value = klant.adres;
+    document.getElementById('klant-submit-btn').textContent = 'Wijziging opslaan';
+    document.getElementById('klant-cancel-btn').style.display = '';
+  }
+
+  function klantBewerkenAnnuleren() {
+    bewerkKlantIndex = null;
+    document.getElementById('nieuwe-klant-naam').value = '';
+    document.getElementById('nieuwe-klant-adres').value = '';
+    document.getElementById('klant-submit-btn').textContent = 'Toevoegen';
+    document.getElementById('klant-cancel-btn').style.display = 'none';
+  }
+
+  function klantVerwijderen(index) {
+    if (!confirm('Deze klant verwijderen?')) return;
+    klanten.splice(index, 1);
+    bewaar('km-klanten', klanten);
+    if (bewerkKlantIndex === index) klantBewerkenAnnuleren();
+    klantenRender();
+  }
+
+  function opDoelInvoer() {
+    const naam = document.getElementById('rit-doel').value.trim();
+    const klant = klanten.find(k => k.naam.toLowerCase() === naam.toLowerCase());
+    if (klant) {
+      document.getElementById('rit-naar').value = klant.adres;
+      routeVoorstel();
+    }
+  }
+
+  // ---------- Route-geheugen ----------
+  function routeVoorstel() {
+    const van = document.getElementById('rit-van').value;
+    const naar = document.getElementById('rit-naar').value;
+    if (!van.trim() || !naar.trim()) return;
+    const key = routeKey(van, naar);
+    if (routes[key] != null) {
+      document.getElementById('rit-km').value = routes[key];
+    }
+  }
+
+  // ---------- Ritten ----------
+  let bewerkRitId = null;
+
+  function ritToevoegen() {
+    const datum = document.getElementById('rit-datum').value;
+    const van = document.getElementById('rit-van').value.trim();
+    const naar = document.getElementById('rit-naar').value.trim();
+    const doel = document.getElementById('rit-doel').value.trim();
+    const retour = document.getElementById('rit-retour').checked;
+    let km = parseFloat(document.getElementById('rit-km').value);
+
+    if (!datum || !van || !naar || isNaN(km) || km <= 0) {
+      alert('Vul datum, van, naar en een geldig aantal kilometers in.');
+      return;
+    }
+
+    // Onthoud de enkele-reis afstand voordat we verdubbelen
+    routes[routeKey(van, naar)] = km;
+    bewaar('km-routes', routes);
+
+    if (retour) km = km * 2;
+
+    if (bewerkRitId !== null) {
+      const index = ritten.findIndex(r => r.id === bewerkRitId);
+      if (index !== -1) {
+        ritten[index] = { id: bewerkRitId, datum, van, naar, km, retour, doel };
+      }
+      bewerkRitId = null;
+    } else {
+      ritten.push({
+        id: Date.now().toString(),
+        datum, van, naar, km, retour, doel
+      });
+    }
+    bewaar('km-ritten', ritten);
+
+    bewerkenAnnuleren();
+
+    renderOverzicht();
+    renderStats();
+  }
+
+  function ritBewerken(id) {
+    const rit = ritten.find(r => r.id === id);
+    if (!rit) return;
+
+    bewerkRitId = id;
+
+    document.getElementById('rit-datum').value = rit.datum;
+    document.getElementById('rit-van').value = rit.van;
+    document.getElementById('rit-naar').value = rit.naar;
+    document.getElementById('rit-doel').value = rit.doel;
+    document.getElementById('rit-retour').checked = false;
+
+    // Bij retour-ritten is de enkele-reis afstand de helft van het opgeslagen totaal
+    document.getElementById('rit-km').value = rit.retour ? rit.km / 2 : rit.km;
+
+    document.getElementById('rit-submit-btn').textContent = 'Wijziging opslaan';
+    document.getElementById('rit-cancel-btn').style.display = '';
+
+    document.querySelector('.card:has(#rit-submit-btn)').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function bewerkenAnnuleren() {
+    bewerkRitId = null;
+    document.getElementById('rit-datum').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('rit-van').value = '';
+    document.getElementById('rit-naar').value = '';
+    document.getElementById('rit-km').value = '';
+    document.getElementById('rit-doel').value = '';
+    document.getElementById('rit-retour').checked = false;
+    document.getElementById('rit-submit-btn').textContent = 'Rit toevoegen';
+    document.getElementById('rit-cancel-btn').style.display = 'none';
+  }
+
+  function ritVerwijderen(id) {
+    if (!confirm('Deze rit verwijderen?')) return;
+    ritten = ritten.filter(r => r.id !== id);
+    bewaar('km-ritten', ritten);
+    renderOverzicht();
+    renderStats();
+  }
+
+  // ---------- Statistieken (huidig jaar) ----------
+  function renderStats() {
+    const huidigJaar = new Date().getFullYear();
+    const tarief = instellingen.tarief != null ? instellingen.tarief : 0.23;
+    const ritenDitJaar = ritten.filter(r => new Date(r.datum).getFullYear() === huidigJaar);
+    const totaalKm = ritenDitJaar.reduce((s, r) => s + r.km, 0);
+    const totaalVergoeding = totaalKm * tarief;
+
+    document.getElementById('stat-km').textContent = formatKm(totaalKm);
+    document.getElementById('stat-vergoeding').textContent = formatGeld(totaalVergoeding);
+    document.getElementById('stat-ritten').textContent = ritenDitJaar.length;
+  }
+
+  // ---------- Overzicht per maand ----------
+  function renderOverzicht() {
+    const container = document.getElementById('overzicht');
+    const tarief = instellingen.tarief != null ? instellingen.tarief : 0.23;
+
+    if (ritten.length === 0) {
+      container.innerHTML = '<p class="empty-msg">Nog geen ritten geregistreerd.</p>';
+      return;
+    }
+
+    // Sorteer aflopend op datum
+    const gesorteerd = [...ritten].sort((a, b) => b.datum.localeCompare(a.datum));
+
+    // Groepeer per jaar-maand
+    const groepen = {};
+    gesorteerd.forEach(rit => {
+      const d = new Date(rit.datum);
+      const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      if (!groepen[key]) groepen[key] = [];
+      groepen[key].push(rit);
+    });
+
+    let html = '<table>';
+    Object.keys(groepen).sort().reverse().forEach(key => {
+      const [jaar, maand] = key.split('-').map(Number);
+      const ritenMaand = groepen[key];
+      const totaalKm = ritenMaand.reduce((s, r) => s + r.km, 0);
+      const totaalVergoeding = totaalKm * tarief;
+
+      html += `
+        <tr class="month-header">
+          <td colspan="5">${maandNaam(jaar, maand - 1)} &mdash; ${formatKm(totaalKm)} km, ${formatGeld(totaalVergoeding)}</td>
+        </tr>
+        <tr>
+          <th>Datum</th><th>Van</th><th>Naar</th><th>Doel</th><th class="right">Km</th><th></th>
+        </tr>
+      `;
+
+      ritenMaand.forEach(rit => {
+        html += `
+          <tr>
+            <td>${formatDatum(rit.datum)}${rit.retour ? ' (retour)' : ''}</td>
+            <td>${escapeHtml(rit.van)}</td>
+            <td>${escapeHtml(rit.naar)}</td>
+            <td>${escapeHtml(rit.doel)}</td>
+            <td class="right">${formatKm(rit.km)}</td>
+            <td class="right">
+              <button class="secondary" onclick="ritBewerken('${rit.id}')">Bewerk</button>
+              <button class="danger" onclick="ritVerwijderen('${rit.id}')">Verwijder</button>
+            </td>
+          </tr>
+        `;
+      });
+    });
+    html += '</table>';
+
+    container.innerHTML = html;
+  }
+
+  function escapeHtml(tekst) {
+    const div = document.createElement('div');
+    div.textContent = tekst == null ? '' : String(tekst);
+    return div.innerHTML;
+  }
+
+  // ---------- Export / Import ----------
+  function download(bestandsnaam, inhoud, type) {
+    const blob = new Blob([inhoud], { type: type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = bestandsnaam;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportJSON() {
+    const data = { ritten, klanten, routes, instellingen };
+    const datumStr = new Date().toISOString().slice(0, 10);
+    download(`kilometerregistratie-backup-${datumStr}.json`, JSON.stringify(data, null, 2), 'application/json');
+  }
+
+  function importJSON(event) {
+    const bestand = event.target.files[0];
+    if (!bestand) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!confirm('Dit overschrijft je huidige gegevens met de inhoud van het bestand. Doorgaan?')) return;
+        ritten = Array.isArray(data.ritten) ? data.ritten : [];
+        klanten = Array.isArray(data.klanten) ? data.klanten : [];
+        routes = data.routes && typeof data.routes === 'object' ? data.routes : {};
+        instellingen = data.instellingen && typeof data.instellingen === 'object'
+          ? data.instellingen
+          : { thuisadres: '', tarief: 0.23 };
+
+        bewaar('km-ritten', ritten);
+        bewaar('km-klanten', klanten);
+        bewaar('km-routes', routes);
+        bewaar('km-instellingen', instellingen);
+
+        instellingenLaden();
+        klantenRender();
+        renderOverzicht();
+        renderStats();
+        alert('Gegevens succesvol geimporteerd.');
+      } catch (err) {
+        alert('Kon het bestand niet lezen. Is het een geldig export-bestand?');
+      }
+    };
+    reader.readAsText(bestand);
+    event.target.value = '';
+  }
+
+  function exportCSV() {
+    const tarief = instellingen.tarief != null ? instellingen.tarief : 0.23;
+    const gesorteerd = [...ritten].sort((a, b) => a.datum.localeCompare(b.datum));
+
+    const rijen = [['Datum', 'Van', 'Naar', 'Kilometers', 'Vergoeding', 'Doel']];
+    gesorteerd.forEach(r => {
+      rijen.push([
+        formatDatum(r.datum),
+        r.van,
+        r.naar,
+        r.km.toFixed(1).replace('.', ','),
+        (r.km * tarief).toFixed(2).replace('.', ','),
+        r.doel
+      ]);
+    });
+
+    const csv = rijen.map(rij => rij.map(veld => {
+      const tekst = String(veld == null ? '' : veld);
+      if (tekst.includes(';') || tekst.includes('"') || tekst.includes('\n')) {
+        return '"' + tekst.replace(/"/g, '""') + '"';
+      }
+      return tekst;
+    }).join(';')).join('\r\n');
+
+    const datumStr = new Date().toISOString().slice(0, 10);
+    download(`kilometerregistratie-${datumStr}.csv`, '﻿' + csv, 'text/csv;charset=utf-8');
+  }
+
+  // ---------- Init ----------
+  instellingenLaden();
+  klantenRender();
+  renderOverzicht();
+  renderStats();
+
+  // Standaard datum van vandaag invullen
+  document.getElementById('rit-datum').value = new Date().toISOString().slice(0, 10);
+</script>
+</body>
+</html>
