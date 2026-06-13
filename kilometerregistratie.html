@@ -188,125 +188,206 @@
     border-top: 1px solid var(--rand);
     margin: 16px 0;
   }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid var(--rand);
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    padding: 10px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--grijs);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.05em;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+  }
+  .tab-btn:hover { color: var(--blauw); }
+  .tab-btn.active {
+    color: var(--blauw);
+    border-bottom-color: var(--amber);
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>Kilometerregistratie</h1>
 
-  <!-- Statistieken -->
-  <div class="card">
-    <div class="stats">
-      <div>
-        <div class="stat-value" id="stat-km">0</div>
-        <div class="stat-label">Kilometers dit jaar</div>
-      </div>
-      <div>
-        <div class="stat-value" id="stat-vergoeding">€ 0,00</div>
-        <div class="stat-label">Vergoeding dit jaar</div>
-      </div>
-      <div>
-        <div class="stat-value" id="stat-ritten">0</div>
-        <div class="stat-label">Ritten dit jaar</div>
-      </div>
-    </div>
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-btn-dashboard" onclick="toonTab('dashboard')">Dashboard</button>
+    <button class="tab-btn" id="tab-btn-invoer" onclick="toonTab('invoer')">Invoer kilometers</button>
+    <button class="tab-btn" id="tab-btn-export" onclick="toonTab('export')">Export</button>
   </div>
 
-  <!-- Adresboek -->
-  <div class="card">
-    <details>
-      <summary>Adresboek &amp; instellingen</summary>
-
-      <div class="field">
-        <label for="thuisadres">Thuisadres</label>
-        <input type="text" id="thuisadres" placeholder="Straat en huisnummer, plaats">
-      </div>
-
-      <div class="field" style="margin-top: 10px;">
-        <label for="tarief">Kilometertarief (euro per km)</label>
-        <input type="number" id="tarief" step="0.01" min="0" placeholder="0.23">
-      </div>
-
-      <hr class="sep">
-
-      <h3 style="font-size: 1em;">Klanten</h3>
-      <div id="klanten-lijst"></div>
-
-      <div class="klant-row">
-        <div class="field">
-          <label for="nieuwe-klant-naam">Naam</label>
-          <input type="text" id="nieuwe-klant-naam" placeholder="Klantnaam">
-        </div>
-        <div class="field">
-          <label for="nieuwe-klant-adres">Adres</label>
-          <input type="text" id="nieuwe-klant-adres" placeholder="Straat en huisnummer, plaats">
+  <!-- Dashboard -->
+  <div class="tab-content active" id="tab-dashboard">
+    <!-- Statistieken -->
+    <div class="card">
+      <div class="stats">
+        <div>
+          <div class="stat-value" id="stat-km">0</div>
+          <div class="stat-label">Kilometers dit jaar</div>
         </div>
         <div>
-          <button class="secondary" id="klant-submit-btn" onclick="klantToevoegen()">Toevoegen</button>
-          <button class="secondary" id="klant-cancel-btn" style="display:none" onclick="klantBewerkenAnnuleren()">Annuleren</button>
+          <div class="stat-value" id="stat-vergoeding">€ 0,00</div>
+          <div class="stat-label">Vergoeding dit jaar</div>
         </div>
-      </div>
-    </details>
-  </div>
-
-  <!-- Rit toevoegen -->
-  <div class="card">
-    <h2>Nieuwe rit</h2>
-    <div class="form-grid">
-      <div class="field">
-        <label for="rit-datum">Datum</label>
-        <input type="date" id="rit-datum">
-      </div>
-      <div class="field">
-        <label for="rit-doel">Klant / doel</label>
-        <input type="text" id="rit-doel" list="klanten-datalist" placeholder="Klantnaam of omschrijving" oninput="opDoelInvoer()">
-        <datalist id="klanten-datalist"></datalist>
-      </div>
-    </div>
-    <div class="form-grid">
-      <div class="field field-with-button">
-        <label for="rit-van">Van</label>
-        <input type="text" id="rit-van" placeholder="Adres van vertrek" oninput="routeVoorstel()">
-        <button type="button" class="mini-btn" onclick="vulThuis('rit-van')">Gebruik thuisadres</button>
-      </div>
-      <div class="field field-with-button">
-        <label for="rit-naar">Naar</label>
-        <input type="text" id="rit-naar" placeholder="Adres van bestemming" oninput="routeVoorstel()">
-        <button type="button" class="mini-btn" onclick="vulThuis('rit-naar')">Gebruik thuisadres</button>
-      </div>
-    </div>
-    <div class="form-grid">
-      <div class="field">
-        <label for="rit-km">Kilometers (enkele reis)</label>
-        <input type="number" id="rit-km" min="0" step="0.1" placeholder="0">
-      </div>
-      <div class="field" style="justify-content: center;">
-        <div class="checkbox-row" style="margin-top: 24px;">
-          <input type="checkbox" id="rit-retour">
-          <label for="rit-retour" style="margin-bottom: 0;">Retour (kilometers worden verdubbeld)</label>
+        <div>
+          <div class="stat-value" id="stat-ritten">0</div>
+          <div class="stat-label">Ritten dit jaar</div>
         </div>
       </div>
     </div>
-    <div class="actions-row">
-      <button class="primary" id="rit-submit-btn" onclick="ritToevoegen()">Rit toevoegen</button>
-      <button class="secondary" id="rit-cancel-btn" style="display:none" onclick="bewerkenAnnuleren()">Annuleren</button>
+
+    <!-- Overzicht -->
+    <div class="card">
+      <h2>Overzicht per maand</h2>
+      <div id="overzicht"></div>
     </div>
   </div>
 
-  <!-- Overzicht -->
-  <div class="card">
-    <h2>Overzicht per maand</h2>
-    <div id="overzicht"></div>
+  <!-- Invoer kilometers -->
+  <div class="tab-content" id="tab-invoer">
+    <!-- Adresboek -->
+    <div class="card">
+      <details>
+        <summary>Adresboek &amp; instellingen</summary>
+
+        <div class="field">
+          <label for="thuisadres">Thuisadres</label>
+          <input type="text" id="thuisadres" placeholder="Straat en huisnummer, plaats">
+        </div>
+
+        <div class="field" style="margin-top: 10px;">
+          <label for="tarief">Kilometertarief (euro per km)</label>
+          <input type="number" id="tarief" step="0.01" min="0" placeholder="0.23">
+        </div>
+
+        <hr class="sep">
+
+        <h3 style="font-size: 1em;">Klanten</h3>
+        <div id="klanten-lijst"></div>
+
+        <div class="klant-row">
+          <div class="field">
+            <label for="nieuwe-klant-naam">Naam</label>
+            <input type="text" id="nieuwe-klant-naam" placeholder="Klantnaam">
+          </div>
+          <div class="field">
+            <label for="nieuwe-klant-adres">Adres</label>
+            <input type="text" id="nieuwe-klant-adres" placeholder="Straat en huisnummer, plaats">
+          </div>
+          <div>
+            <button class="secondary" id="klant-submit-btn" onclick="klantToevoegen()">Toevoegen</button>
+            <button class="secondary" id="klant-cancel-btn" style="display:none" onclick="klantBewerkenAnnuleren()">Annuleren</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Rit toevoegen -->
+    <div class="card">
+      <h2>Nieuwe rit</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label for="rit-datum">Datum</label>
+          <input type="date" id="rit-datum">
+        </div>
+        <div class="field">
+          <label for="rit-doel">Klant / doel</label>
+          <input type="text" id="rit-doel" list="klanten-datalist" placeholder="Klantnaam of omschrijving" oninput="opDoelInvoer()">
+          <datalist id="klanten-datalist"></datalist>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field field-with-button">
+          <label for="rit-van">Van</label>
+          <input type="text" id="rit-van" placeholder="Adres van vertrek" oninput="routeVoorstel()">
+          <button type="button" class="mini-btn" onclick="vulThuis('rit-van')">Gebruik thuisadres</button>
+        </div>
+        <div class="field field-with-button">
+          <label for="rit-naar">Naar</label>
+          <input type="text" id="rit-naar" placeholder="Adres van bestemming" oninput="routeVoorstel()">
+          <button type="button" class="mini-btn" onclick="vulThuis('rit-naar')">Gebruik thuisadres</button>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="rit-km">Kilometers (enkele reis)</label>
+          <input type="number" id="rit-km" min="0" step="0.1" placeholder="0">
+        </div>
+        <div class="field" style="justify-content: center;">
+          <div class="checkbox-row" style="margin-top: 24px;">
+            <input type="checkbox" id="rit-retour">
+            <label for="rit-retour" style="margin-bottom: 0;">Retour (kilometers worden verdubbeld)</label>
+          </div>
+        </div>
+      </div>
+      <div class="actions-row">
+        <button class="primary" id="rit-submit-btn" onclick="ritToevoegen()">Rit toevoegen</button>
+        <button class="secondary" id="rit-cancel-btn" style="display:none" onclick="bewerkenAnnuleren()">Annuleren</button>
+      </div>
+    </div>
   </div>
 
-  <!-- Export/Import -->
-  <div class="card">
-    <h2>Back-up &amp; export</h2>
-    <div class="actions-row">
-      <button class="amber" onclick="exportJSON()">Export JSON (back-up)</button>
-      <button class="secondary" onclick="document.getElementById('import-file').click()">Import JSON</button>
-      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
-      <button class="amber" onclick="exportCSV()">Export CSV</button>
+  <!-- Export -->
+  <div class="tab-content" id="tab-export">
+    <!-- Export op maat -->
+    <div class="card">
+      <h2>Export maken</h2>
+      <p>Maak een CSV-export van ritten, eventueel gefilterd op jaar, maand en/of klant.</p>
+      <div class="form-grid">
+        <div class="field">
+          <label for="export-jaar">Jaar</label>
+          <select id="export-jaar">
+            <option value="">Alle jaren</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="export-maand">Maand</label>
+          <select id="export-maand">
+            <option value="">Alle maanden</option>
+            <option value="0">januari</option>
+            <option value="1">februari</option>
+            <option value="2">maart</option>
+            <option value="3">april</option>
+            <option value="4">mei</option>
+            <option value="5">juni</option>
+            <option value="6">juli</option>
+            <option value="7">augustus</option>
+            <option value="8">september</option>
+            <option value="9">oktober</option>
+            <option value="10">november</option>
+            <option value="11">december</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="export-klant">Klant / doel</label>
+          <select id="export-klant">
+            <option value="">Alle klanten</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions-row">
+        <button class="amber" onclick="exportCSV()">Export CSV</button>
+      </div>
+    </div>
+
+    <!-- Export/Import -->
+    <div class="card">
+      <h2>Back-up &amp; volledige export</h2>
+      <div class="actions-row">
+        <button class="amber" onclick="exportJSON()">Export JSON (back-up)</button>
+        <button class="secondary" onclick="document.getElementById('import-file').click()">Import JSON</button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
+      </div>
     </div>
   </div>
 </div>
@@ -330,6 +411,15 @@
   let klanten = laad('km-klanten', []);
   let routes = laad('km-routes', {});
   let instellingen = laad('km-instellingen', { thuisadres: '', tarief: 0.23 });
+
+  // ---------- Tabs ----------
+  function toonTab(naam) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + naam).classList.add('active');
+    document.getElementById('tab-btn-' + naam).classList.add('active');
+    if (naam === 'export') vulExportFilters();
+  }
 
   // ---------- Helpers ----------
   function routeKey(van, naar) {
@@ -675,9 +765,38 @@
     event.target.value = '';
   }
 
+  function vulExportFilters() {
+    const jaarSelect = document.getElementById('export-jaar');
+    const klantSelect = document.getElementById('export-klant');
+    const huidigeJaar = jaarSelect.value;
+    const huidigeKlant = klantSelect.value;
+
+    const jaren = [...new Set(ritten.map(r => new Date(r.datum).getFullYear()))].sort((a, b) => b - a);
+    jaarSelect.innerHTML = '<option value="">Alle jaren</option>'
+      + jaren.map(j => `<option value="${j}">${j}</option>`).join('');
+    jaarSelect.value = jaren.includes(Number(huidigeJaar)) ? huidigeJaar : '';
+
+    const doelen = [...new Set(ritten.map(r => r.doel).filter(d => d))].sort((a, b) => a.localeCompare(b));
+    klantSelect.innerHTML = '<option value="">Alle klanten</option>'
+      + doelen.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+    klantSelect.value = doelen.includes(huidigeKlant) ? huidigeKlant : '';
+  }
+
   function exportCSV() {
     const tarief = instellingen.tarief != null ? instellingen.tarief : 0.23;
-    const gesorteerd = [...ritten].sort((a, b) => a.datum.localeCompare(b.datum));
+    const jaarFilter = document.getElementById('export-jaar').value;
+    const maandFilter = document.getElementById('export-maand').value;
+    const klantFilter = document.getElementById('export-klant').value;
+
+    const gefilterd = ritten.filter(r => {
+      const d = new Date(r.datum);
+      if (jaarFilter && d.getFullYear() !== Number(jaarFilter)) return false;
+      if (maandFilter && d.getMonth() !== Number(maandFilter)) return false;
+      if (klantFilter && r.doel !== klantFilter) return false;
+      return true;
+    });
+
+    const gesorteerd = [...gefilterd].sort((a, b) => a.datum.localeCompare(b.datum));
 
     const rijen = [['Datum', 'Van', 'Naar', 'Kilometers', 'Vergoeding', 'Doel']];
     gesorteerd.forEach(r => {
@@ -699,8 +818,13 @@
       return tekst;
     }).join(';')).join('\r\n');
 
-    const datumStr = new Date().toISOString().slice(0, 10);
-    download(`kilometerregistratie-${datumStr}.csv`, '﻿' + csv, 'text/csv;charset=utf-8');
+    let naamDelen = ['kilometerregistratie'];
+    if (jaarFilter) naamDelen.push(jaarFilter);
+    if (maandFilter) naamDelen.push(String(Number(maandFilter) + 1).padStart(2, '0'));
+    if (klantFilter) naamDelen.push(klantFilter.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+    if (!jaarFilter && !maandFilter && !klantFilter) naamDelen.push(new Date().toISOString().slice(0, 10));
+
+    download(`${naamDelen.join('-')}.csv`, '﻿' + csv, 'text/csv;charset=utf-8');
   }
 
   // ---------- Init ----------
@@ -708,6 +832,7 @@
   klantenRender();
   renderOverzicht();
   renderStats();
+  vulExportFilters();
 
   // Standaard datum van vandaag invullen
   document.getElementById('rit-datum').value = new Date().toISOString().slice(0, 10);
