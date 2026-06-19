@@ -1,0 +1,3 @@
+#!/bin/bash
+HTML_FILE="/Users/wouterbos/GitHubClone/kilometerregistratie/kilometerregistratie.html"
+open -na "Brave Browser" --args --app="file://$HTML_FILE"

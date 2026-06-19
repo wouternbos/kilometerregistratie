@@ -138,6 +138,15 @@
     cursor: pointer;
   }
   button.danger:hover { background: #fdeceb; }
+  .acties {
+    display: inline-flex;
+    gap: 6px;
+  }
+  button.icon-btn {
+    padding: 6px 10px;
+    font-size: 1em;
+    line-height: 1;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
@@ -178,6 +187,48 @@
     margin-top: 10px;
   }
   .right { text-align: right; }
+  .retour-badge {
+    display: inline-block;
+    margin-top: 2px;
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--blauw);
+    background: var(--achtergrond);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+  .retour-rij td {
+    border-bottom: 1px solid var(--rand);
+    color: var(--grijs);
+  }
+  .tussenstop-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: end;
+    margin-bottom: 8px;
+  }
+  .tussenstop-row .field-with-button { flex: 1; }
+  .leg-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 0.9em;
+  }
+  .leg-row .leg-label { color: var(--grijs); }
+  .leg-row input[type="number"] { width: 100px; }
+  .tussenstop-badge {
+    display: inline-block;
+    margin-top: 2px;
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--amber);
+    background: #fef7ea;
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
   .empty-msg {
     color: var(--grijs);
     font-style: italic;
@@ -214,6 +265,26 @@
   }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
+  .adres-suggesties {
+    display: none;
+    position: absolute;
+    z-index: 10;
+    left: 0;
+    right: 0;
+    background: var(--wit);
+    border: 1px solid var(--rand);
+    border-radius: 6px;
+    margin-top: 2px;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .adres-suggestie {
+    padding: 6px 10px;
+    font-size: 0.9em;
+    cursor: pointer;
+  }
+  .adres-suggestie:hover { background: var(--achtergrond); }
 </style>
 </head>
 <body>
@@ -221,13 +292,12 @@
   <h1>Kilometerregistratie</h1>
 
   <div class="tabs">
-    <button class="tab-btn active" id="tab-btn-dashboard" onclick="toonTab('dashboard')">Dashboard</button>
-    <button class="tab-btn" id="tab-btn-invoer" onclick="toonTab('invoer')">Invoer kilometers</button>
+    <button class="tab-btn active" id="tab-btn-kilometerregistratie" onclick="toonTab('kilometerregistratie')">Kilometerregistratie</button>
     <button class="tab-btn" id="tab-btn-export" onclick="toonTab('export')">Export</button>
   </div>
 
-  <!-- Dashboard -->
-  <div class="tab-content active" id="tab-dashboard">
+  <!-- Kilometerregistratie -->
+  <div class="tab-content active" id="tab-kilometerregistratie">
     <!-- Statistieken -->
     <div class="card">
       <div class="stats">
@@ -246,15 +316,6 @@
       </div>
     </div>
 
-    <!-- Overzicht -->
-    <div class="card">
-      <h2>Overzicht per maand</h2>
-      <div id="overzicht"></div>
-    </div>
-  </div>
-
-  <!-- Invoer kilometers -->
-  <div class="tab-content" id="tab-invoer">
     <!-- Adresboek -->
     <div class="card">
       <details>
@@ -309,24 +370,50 @@
       <div class="form-grid">
         <div class="field field-with-button">
           <label for="rit-van">Van</label>
-          <input type="text" id="rit-van" placeholder="Adres van vertrek" oninput="routeVoorstel()">
+          <input type="text" id="rit-van" placeholder="Adres van vertrek" oninput="routeVoorstelMulti()" onchange="adresGewijzigd()">
           <button type="button" class="mini-btn" onclick="vulThuis('rit-van')">Gebruik thuisadres</button>
         </div>
         <div class="field field-with-button">
-          <label for="rit-naar">Naar</label>
-          <input type="text" id="rit-naar" placeholder="Adres van bestemming" oninput="routeVoorstel()">
+          <label for="rit-naar">Eindbestemming</label>
+          <input type="text" id="rit-naar" placeholder="Adres van eindbestemming" oninput="routeVoorstelMulti()" onchange="adresGewijzigd()">
           <button type="button" class="mini-btn" onclick="vulThuis('rit-naar')">Gebruik thuisadres</button>
         </div>
       </div>
-      <div class="form-grid">
-        <div class="field">
-          <label for="rit-km">Kilometers (enkele reis)</label>
-          <input type="number" id="rit-km" min="0" step="0.1" placeholder="0">
+
+      <div id="tussenstops-container"></div>
+      <div style="margin-bottom: 12px;">
+        <button type="button" class="mini-btn" onclick="tussenstopToevoegen()">+ Tussenstop toevoegen</button>
+      </div>
+
+      <div id="km-velden">
+        <div class="form-grid">
+          <div class="field">
+            <label for="rit-km">Kilometers (heenreis)</label>
+            <input type="number" id="rit-km" min="0" step="0.1" placeholder="0">
+          </div>
+          <div class="field" style="justify-content: center;">
+            <div class="checkbox-row" style="margin-top: 24px;">
+              <input type="checkbox" id="rit-retour" onchange="toggleRetourKm()">
+              <label for="rit-retour" style="margin-bottom: 0;">Retour (maakt ook een terugreis aan)</label>
+            </div>
+          </div>
         </div>
-        <div class="field" style="justify-content: center;">
-          <div class="checkbox-row" style="margin-top: 24px;">
-            <input type="checkbox" id="rit-retour">
-            <label for="rit-retour" style="margin-bottom: 0;">Retour (kilometers worden verdubbeld)</label>
+        <div class="form-grid" id="retour-km-veld" style="display:none;">
+          <div class="field">
+            <label for="rit-km-retour">Kilometers (retour)</label>
+            <input type="number" id="rit-km-retour" min="0" step="0.1" placeholder="0">
+          </div>
+          <div class="field" style="justify-content: center; align-items: flex-start;">
+            <p style="margin: 0; margin-top: 24px; font-size: 0.85em; color: var(--grijs);">Eindbestemming → Vertrekadres</p>
+          </div>
+        </div>
+      </div>
+      <div id="km-velden-multi" style="display:none;">
+        <div id="km-legs-lijst"></div>
+        <div class="field" style="margin-bottom: 12px;">
+          <div class="checkbox-row">
+            <input type="checkbox" id="rit-retour-multi">
+            <label for="rit-retour-multi" style="margin-bottom: 0;">Retour (maakt ook een terugreis aan)</label>
           </div>
         </div>
       </div>
@@ -334,6 +421,12 @@
         <button class="primary" id="rit-submit-btn" onclick="ritToevoegen()">Rit toevoegen</button>
         <button class="secondary" id="rit-cancel-btn" style="display:none" onclick="bewerkenAnnuleren()">Annuleren</button>
       </div>
+    </div>
+
+    <!-- Overzicht -->
+    <div class="card">
+      <h2>Overzicht per maand</h2>
+      <div id="overzicht"></div>
     </div>
   </div>
 
@@ -380,15 +473,6 @@
       </div>
     </div>
 
-    <!-- Export/Import -->
-    <div class="card">
-      <h2>Back-up &amp; volledige export</h2>
-      <div class="actions-row">
-        <button class="amber" onclick="exportJSON()">Export JSON (back-up)</button>
-        <button class="secondary" onclick="document.getElementById('import-file').click()">Import JSON</button>
-        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
-      </div>
-    </div>
   </div>
 </div>
 
@@ -411,6 +495,7 @@
   let klanten = laad('km-klanten', []);
   let routes = laad('km-routes', {});
   let instellingen = laad('km-instellingen', { thuisadres: '', tarief: 0.23 });
+  let adresCoordinaten = laad('km-adres-coords', {});
 
   // ---------- Tabs ----------
   function toonTab(naam) {
@@ -462,9 +547,180 @@
     renderOverzicht();
   });
 
-  function vulThuis(veldId) {
-    document.getElementById(veldId).value = instellingen.thuisadres || '';
+  // ---------- Adres-suggesties (Nominatim / OpenStreetMap) ----------
+  function adresAutocompleteKoppelen(input, doelVeld) {
+    doelVeld = doelVeld || input;
+    const lijst = document.createElement('div');
+    lijst.className = 'adres-suggesties';
+    input.parentNode.style.position = input.parentNode.style.position || 'relative';
+    input.parentNode.appendChild(lijst);
+
+    let timer = null;
+
+    input.addEventListener('input', () => {
+      const query = input.value.trim();
+      clearTimeout(timer);
+      if (query.length < 3) {
+        lijst.innerHTML = '';
+        lijst.style.display = 'none';
+        return;
+      }
+      timer = setTimeout(async () => {
+        try {
+          const url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=5&q=' + encodeURIComponent(query);
+          const respons = await fetch(url, { headers: { 'Accept-Language': 'nl' } });
+          const resultaten = await respons.json();
+          if (resultaten.length === 0) {
+            lijst.innerHTML = '';
+            lijst.style.display = 'none';
+            return;
+          }
+          lijst.innerHTML = resultaten.map(r => `<div class="adres-suggestie">${escapeHtml(r.display_name)}</div>`).join('');
+          lijst.style.display = 'block';
+          lijst.querySelectorAll('.adres-suggestie').forEach((el, i) => {
+            el.addEventListener('click', () => {
+              doelVeld.value = resultaten[i].display_name;
+              adresCoordinaten[resultaten[i].display_name.toLowerCase().trim()] = {
+                lat: parseFloat(resultaten[i].lat),
+                lon: parseFloat(resultaten[i].lon)
+              };
+              bewaar('km-adres-coords', adresCoordinaten);
+              lijst.innerHTML = '';
+              lijst.style.display = 'none';
+              doelVeld.dispatchEvent(new Event('change'));
+              routeVoorstel();
+              berekenAfstandAutomatisch();
+            });
+          });
+        } catch (e) {
+          lijst.innerHTML = '';
+          lijst.style.display = 'none';
+        }
+      }, 400);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (e.target !== input && !lijst.contains(e.target)) {
+        lijst.innerHTML = '';
+        lijst.style.display = 'none';
+      }
+    });
+  }
+
+  async function berekenAfstand(van, naar) {
+    const vanKey = van.toLowerCase().trim();
+    const naarKey = naar.toLowerCase().trim();
+    const vanCoord = adresCoordinaten[vanKey];
+    const naarCoord = adresCoordinaten[naarKey];
+    if (!vanCoord || !naarCoord) return null;
+    try {
+      const url = `https://router.project-osrm.org/route/v1/driving/${vanCoord.lon},${vanCoord.lat};${naarCoord.lon},${naarCoord.lat}?overview=false`;
+      const resp = await fetch(url);
+      const data = await resp.json();
+      if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+        return Math.round(data.routes[0].distance / 100) / 10;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  async function berekenAfstandAutomatisch() {
+    const van = document.getElementById('rit-van').value.trim();
+    const naar = document.getElementById('rit-naar').value.trim();
+    if (!van || !naar) return;
+
+    if (van.length < 3 || naar.length < 3) return;
+
+    await geocodeerAdres(van);
+    await geocodeerAdres(naar);
+
+    if (tussenstops.length > 0) {
+      const legs = getLegs();
+      const kmInputs = document.querySelectorAll('.leg-km');
+      for (let i = 0; i < legs.length; i++) {
+        if (legs[i].van && legs[i].naar && kmInputs[i] && !kmInputs[i].value) {
+          await geocodeerAdres(legs[i].van);
+          await geocodeerAdres(legs[i].naar);
+          const km = await berekenAfstand(legs[i].van, legs[i].naar);
+          if (km !== null) kmInputs[i].value = km;
+        }
+      }
+    } else {
+      const kmVeld = document.getElementById('rit-km');
+      if (!kmVeld.value) {
+        const key = routeKey(van, naar);
+        if (routes[key] != null) {
+          kmVeld.value = routes[key];
+        } else {
+          const km = await berekenAfstand(van, naar);
+          if (km !== null) kmVeld.value = km;
+        }
+      }
+      if (document.getElementById('rit-retour').checked) {
+        const retourVeld = document.getElementById('rit-km-retour');
+        if (!retourVeld.value) {
+          const retourKey = routeKey(naar, van);
+          if (routes[retourKey] != null) {
+            retourVeld.value = routes[retourKey];
+          } else {
+            const kmRetour = await berekenAfstand(naar, van);
+            if (kmRetour !== null) retourVeld.value = kmRetour;
+          }
+        }
+      }
+    }
+  }
+
+  async function toggleRetourKm() {
+    const checked = document.getElementById('rit-retour').checked;
+    const veld = document.getElementById('retour-km-veld');
+    veld.style.display = checked ? '' : 'none';
+    if (checked) {
+      const retourKmVeld = document.getElementById('rit-km-retour');
+      if (!retourKmVeld.value) {
+        const heenKm = document.getElementById('rit-km').value;
+        if (heenKm) retourKmVeld.value = heenKm;
+      }
+      const van = document.getElementById('rit-van').value.trim();
+      const naar = document.getElementById('rit-naar').value.trim();
+      if (van && naar && !retourKmVeld.value) {
+        const km = await berekenAfstand(naar, van);
+        if (km !== null) retourKmVeld.value = km;
+      }
+    }
+  }
+
+  async function adresGewijzigd() {
+    const van = document.getElementById('rit-van').value.trim();
+    const naar = document.getElementById('rit-naar').value.trim();
+    if (van) await geocodeerAdres(van);
+    if (naar) await geocodeerAdres(naar);
+    for (const ts of tussenstops) {
+      if (ts) await geocodeerAdres(ts);
+    }
+    berekenAfstandAutomatisch();
+  }
+
+  async function geocodeerAdres(adres) {
+    const key = adres.toLowerCase().trim();
+    if (adresCoordinaten[key]) return;
+    try {
+      const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(adres);
+      const resp = await fetch(url, { headers: { 'Accept-Language': 'nl' } });
+      const res = await resp.json();
+      if (res.length > 0) {
+        adresCoordinaten[key] = { lat: parseFloat(res[0].lat), lon: parseFloat(res[0].lon) };
+        bewaar('km-adres-coords', adresCoordinaten);
+      }
+    } catch (e) {}
+  }
+
+  async function vulThuis(veldId) {
+    const adres = instellingen.thuisadres || '';
+    document.getElementById(veldId).value = adres;
+    if (adres) await geocodeerAdres(adres);
     routeVoorstel();
+    berekenAfstandAutomatisch();
   }
 
   // ---------- Adresboek / klanten ----------
@@ -477,9 +733,9 @@
         <div class="klant-row">
           <div><strong>${escapeHtml(k.naam)}</strong></div>
           <div>${escapeHtml(k.adres)}</div>
-          <div>
-            <button class="secondary" onclick="klantBewerken(${i})">Bewerk</button>
-            <button class="danger" onclick="klantVerwijderen(${i})">Verwijder</button>
+          <div class="acties">
+            <button class="secondary icon-btn" title="Bewerk" onclick="klantBewerken(${i})">✏️</button>
+            <button class="danger icon-btn" title="Verwijder" onclick="klantVerwijderen(${i})">🗑️</button>
           </div>
         </div>
       `).join('');
@@ -534,11 +790,102 @@
     klantenRender();
   }
 
-  function opDoelInvoer() {
+  async function opDoelInvoer() {
     const naam = document.getElementById('rit-doel').value.trim();
     const klant = klanten.find(k => k.naam.toLowerCase() === naam.toLowerCase());
     if (klant) {
       document.getElementById('rit-naar').value = klant.adres;
+      await geocodeerAdres(klant.adres);
+      routeVoorstel();
+      berekenAfstandAutomatisch();
+    }
+  }
+
+  // ---------- Tussenstops ----------
+  let tussenstops = [];
+
+  function tussenstopToevoegen() {
+    tussenstops.push('');
+    renderTussenstops();
+  }
+
+  function tussenstopVerwijderen(index) {
+    tussenstops.splice(index, 1);
+    renderTussenstops();
+  }
+
+  function renderTussenstops() {
+    const container = document.getElementById('tussenstops-container');
+    const heeftStops = tussenstops.length > 0;
+
+    container.innerHTML = tussenstops.map((adres, i) => `
+      <div class="tussenstop-row">
+        <div class="field field-with-button">
+          <label>Tussenstop ${i + 1}</label>
+          <input type="text" class="tussenstop-adres" data-index="${i}" value="${escapeHtml(adres)}" placeholder="Adres tussenstop" oninput="tussenstopGewijzigd(${i}, this.value)">
+          <button type="button" class="mini-btn" onclick="vulThuisTussenstop(${i})">Gebruik thuisadres</button>
+        </div>
+        <div>
+          <button class="danger icon-btn" title="Verwijder tussenstop" onclick="tussenstopVerwijderen(${i})">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+
+    document.getElementById('km-velden').style.display = heeftStops ? 'none' : '';
+    document.getElementById('km-velden-multi').style.display = heeftStops ? '' : 'none';
+
+    if (heeftStops) renderKmLegs();
+
+    container.querySelectorAll('.tussenstop-adres').forEach(input => {
+      adresAutocompleteKoppelen(input);
+    });
+  }
+
+  function tussenstopGewijzigd(index, waarde) {
+    tussenstops[index] = waarde.trim();
+    renderKmLegs();
+  }
+
+  async function vulThuisTussenstop(index) {
+    const adres = instellingen.thuisadres || '';
+    tussenstops[index] = adres;
+    if (adres) await geocodeerAdres(adres);
+    renderTussenstops();
+    berekenAfstandAutomatisch();
+  }
+
+  function getLegs() {
+    const van = document.getElementById('rit-van').value.trim();
+    const naar = document.getElementById('rit-naar').value.trim();
+    const punten = [van, ...tussenstops, naar];
+    const legs = [];
+    for (let i = 0; i < punten.length - 1; i++) {
+      legs.push({ van: punten[i], naar: punten[i + 1] });
+    }
+    return legs;
+  }
+
+  function renderKmLegs() {
+    const lijst = document.getElementById('km-legs-lijst');
+    const legs = getLegs();
+    lijst.innerHTML = '<label style="margin-bottom:8px;">Kilometers per etappe</label>' +
+      legs.map((leg, i) => {
+        const key = routeKey(leg.van, leg.naar);
+        const bekendKm = routes[key] != null ? routes[key] : '';
+        return `
+        <div class="leg-row">
+          <span class="leg-label">${escapeHtml(leg.van || '…')}</span>
+          <span>→</span>
+          <span class="leg-label">${escapeHtml(leg.naar || '…')}</span>
+          <input type="number" class="leg-km" data-index="${i}" min="0" step="0.1" placeholder="km" value="${bekendKm}">
+        </div>`;
+      }).join('');
+  }
+
+  function routeVoorstelMulti() {
+    if (tussenstops.length > 0) {
+      renderKmLegs();
+    } else {
       routeVoorstel();
     }
   }
@@ -562,30 +909,144 @@
     const van = document.getElementById('rit-van').value.trim();
     const naar = document.getElementById('rit-naar').value.trim();
     const doel = document.getElementById('rit-doel').value.trim();
+    const heeftTussenstops = tussenstops.length > 0;
+
+    if (heeftTussenstops) {
+      const legs = getLegs();
+      const kmInputs = document.querySelectorAll('.leg-km');
+      const retour = document.getElementById('rit-retour-multi').checked;
+
+      if (!datum || !van || !naar) {
+        alert('Vul datum, vertrekadres en eindbestemming in.');
+        return;
+      }
+
+      for (let i = 0; i < tussenstops.length; i++) {
+        if (!tussenstops[i]) {
+          alert('Vul alle tussenstop-adressen in.');
+          return;
+        }
+      }
+
+      const legData = [];
+      for (let i = 0; i < legs.length; i++) {
+        const km = parseFloat(kmInputs[i]?.value);
+        if (isNaN(km) || km <= 0) {
+          alert('Vul voor elke etappe een geldig aantal kilometers in.');
+          return;
+        }
+        legData.push({ ...legs[i], km });
+      }
+
+      const groepId = Date.now().toString() + '-grp';
+
+      if (bewerkRitId !== null) {
+        const oudeRit = ritten.find(r => r.id === bewerkRitId);
+        if (oudeRit?.groepId) {
+          ritten = ritten.filter(r => r.groepId !== oudeRit.groepId);
+        } else if (oudeRit) {
+          if (oudeRit.retourPaarId) {
+            ritten = ritten.filter(r => r.retourPaarId !== oudeRit.retourPaarId);
+          } else {
+            ritten = ritten.filter(r => r.id !== bewerkRitId);
+          }
+        }
+        bewerkRitId = null;
+      }
+
+      legData.forEach((leg, i) => {
+        routes[routeKey(leg.van, leg.naar)] = leg.km;
+        const ritObj = {
+          id: Date.now().toString() + '-' + i,
+          datum, van: leg.van, naar: leg.naar, km: leg.km, doel,
+          groepId, groepVolgorde: i, groepAantal: legData.length
+        };
+        ritten.push(ritObj);
+      });
+
+      if (retour) {
+        const retourLegs = [...legData].reverse();
+        retourLegs.forEach((leg, i) => {
+          routes[routeKey(leg.naar, leg.van)] = leg.km;
+          ritten.push({
+            id: Date.now().toString() + '-r' + i,
+            datum, van: leg.naar, naar: leg.van, km: leg.km, doel,
+            groepId, groepVolgorde: legData.length + i, groepAantal: legData.length * 2,
+            isRetour: true
+          });
+        });
+      }
+
+      bewaar('km-routes', routes);
+      bewaar('km-ritten', ritten);
+      bewerkenAnnuleren();
+      renderOverzicht();
+      renderStats();
+      return;
+    }
+
+    // Originele logica voor rit zonder tussenstops
     const retour = document.getElementById('rit-retour').checked;
     let km = parseFloat(document.getElementById('rit-km').value);
+    let kmRetour = retour ? parseFloat(document.getElementById('rit-km-retour').value) : 0;
 
     if (!datum || !van || !naar || isNaN(km) || km <= 0) {
       alert('Vul datum, van, naar en een geldig aantal kilometers in.');
       return;
     }
+    if (retour && (isNaN(kmRetour) || kmRetour <= 0)) {
+      alert('Vul een geldig aantal kilometers in voor de retourrit.');
+      return;
+    }
 
-    // Onthoud de enkele-reis afstand voordat we verdubbelen
     routes[routeKey(van, naar)] = km;
+    if (retour) routes[routeKey(naar, van)] = kmRetour;
     bewaar('km-routes', routes);
-
-    if (retour) km = km * 2;
 
     if (bewerkRitId !== null) {
       const index = ritten.findIndex(r => r.id === bewerkRitId);
       if (index !== -1) {
-        ritten[index] = { id: bewerkRitId, datum, van, naar, km, retour, doel };
+        const oudeRit = ritten[index];
+        if (retour) {
+          const paarId = oudeRit.retourPaarId || Date.now().toString() + '-paar';
+          ritten[index] = { id: bewerkRitId, datum, van, naar, km, doel, retourPaarId: paarId, retourRichting: 'heen' };
+          const terugId = oudeRit.retourPaarId
+            ? ritten.find(r => r.retourPaarId === oudeRit.retourPaarId && r.id !== bewerkRitId)?.id
+            : null;
+          if (terugId) {
+            const terugIndex = ritten.findIndex(r => r.id === terugId);
+            ritten[terugIndex] = { id: terugId, datum, van: naar, naar: van, km: kmRetour, doel, retourPaarId: paarId, retourRichting: 'terug' };
+          } else {
+            ritten.splice(index + 1, 0, {
+              id: Date.now().toString() + '-t',
+              datum, van: naar, naar: van, km: kmRetour, doel,
+              retourPaarId: paarId, retourRichting: 'terug'
+            });
+          }
+        } else {
+          if (oudeRit.retourPaarId) {
+            ritten = ritten.filter(r => !(r.retourPaarId === oudeRit.retourPaarId && r.id !== bewerkRitId));
+          }
+          ritten[ritten.findIndex(r => r.id === bewerkRitId)] = { id: bewerkRitId, datum, van, naar, km, doel };
+        }
       }
       bewerkRitId = null;
+    } else if (retour) {
+      const paarId = Date.now().toString() + '-paar';
+      ritten.push({
+        id: Date.now().toString() + '-h',
+        datum, van, naar, km, doel,
+        retourPaarId: paarId, retourRichting: 'heen'
+      });
+      ritten.push({
+        id: Date.now().toString() + '-t',
+        datum, van: naar, naar: van, km: kmRetour, doel,
+        retourPaarId: paarId, retourRichting: 'terug'
+      });
     } else {
       ritten.push({
         id: Date.now().toString(),
-        datum, van, naar, km, retour, doel
+        datum, van, naar, km, doel
       });
     }
     bewaar('km-ritten', ritten);
@@ -600,38 +1061,66 @@
     const rit = ritten.find(r => r.id === id);
     if (!rit) return;
 
-    bewerkRitId = id;
+    const heenRit = rit.retourRichting === 'heen' ? rit : (rit.retourPaarId ? ritten.find(r => r.retourPaarId === rit.retourPaarId && r.retourRichting === 'heen') : null);
+    const editRit = heenRit || rit;
 
-    document.getElementById('rit-datum').value = rit.datum;
-    document.getElementById('rit-van').value = rit.van;
-    document.getElementById('rit-naar').value = rit.naar;
-    document.getElementById('rit-doel').value = rit.doel;
-    document.getElementById('rit-retour').checked = false;
+    bewerkRitId = editRit.id;
 
-    // Bij retour-ritten is de enkele-reis afstand de helft van het opgeslagen totaal
-    document.getElementById('rit-km').value = rit.retour ? rit.km / 2 : rit.km;
+    document.getElementById('rit-datum').value = editRit.datum;
+    document.getElementById('rit-van').value = editRit.van;
+    document.getElementById('rit-naar').value = editRit.naar;
+    document.getElementById('rit-doel').value = editRit.doel;
+    document.getElementById('rit-retour').checked = !!editRit.retourPaarId;
+    document.getElementById('rit-km').value = editRit.km;
+    if (editRit.retourPaarId) {
+      const terugRit = ritten.find(r => r.retourPaarId === editRit.retourPaarId && r.retourRichting === 'terug');
+      document.getElementById('rit-km-retour').value = terugRit ? terugRit.km : editRit.km;
+      document.getElementById('retour-km-veld').style.display = '';
+    }
 
     document.getElementById('rit-submit-btn').textContent = 'Wijziging opslaan';
     document.getElementById('rit-cancel-btn').style.display = '';
 
+    toonTab('kilometerregistratie');
     document.querySelector('.card:has(#rit-submit-btn)').scrollIntoView({ behavior: 'smooth' });
   }
 
   function bewerkenAnnuleren() {
     bewerkRitId = null;
+    tussenstops = [];
     document.getElementById('rit-datum').value = new Date().toISOString().slice(0, 10);
     document.getElementById('rit-van').value = '';
     document.getElementById('rit-naar').value = '';
     document.getElementById('rit-km').value = '';
     document.getElementById('rit-doel').value = '';
     document.getElementById('rit-retour').checked = false;
+    document.getElementById('rit-km-retour').value = '';
+    document.getElementById('retour-km-veld').style.display = 'none';
+    document.getElementById('rit-retour-multi').checked = false;
     document.getElementById('rit-submit-btn').textContent = 'Rit toevoegen';
     document.getElementById('rit-cancel-btn').style.display = 'none';
+    renderTussenstops();
   }
 
   function ritVerwijderen(id) {
     if (!confirm('Deze rit verwijderen?')) return;
     ritten = ritten.filter(r => r.id !== id);
+    bewaar('km-ritten', ritten);
+    renderOverzicht();
+    renderStats();
+  }
+
+  function retourVerwijderen(paarId) {
+    if (!confirm('Beide retourritten verwijderen?')) return;
+    ritten = ritten.filter(r => r.retourPaarId !== paarId);
+    bewaar('km-ritten', ritten);
+    renderOverzicht();
+    renderStats();
+  }
+
+  function groepVerwijderen(groepId) {
+    if (!confirm('Alle ritten in deze groep verwijderen?')) return;
+    ritten = ritten.filter(r => r.groepId !== groepId);
     bewaar('km-ritten', ritten);
     renderOverzicht();
     renderStats();
@@ -681,27 +1170,103 @@
 
       html += `
         <tr class="month-header">
-          <td colspan="5">${maandNaam(jaar, maand - 1)} &mdash; ${formatKm(totaalKm)} km, ${formatGeld(totaalVergoeding)}</td>
+          <td colspan="6">${maandNaam(jaar, maand - 1)} &mdash; ${formatKm(totaalKm)} km, ${formatGeld(totaalVergoeding)}</td>
         </tr>
         <tr>
-          <th>Datum</th><th>Van</th><th>Naar</th><th>Doel</th><th class="right">Km</th><th></th>
+          <th>Datum</th><th>Van</th><th>Naar</th><th>Doel</th><th class="right">Km</th><th class="right">Acties</th>
         </tr>
       `;
 
+      const getoond = new Set();
       ritenMaand.forEach(rit => {
-        html += `
-          <tr>
-            <td>${formatDatum(rit.datum)}${rit.retour ? ' (retour)' : ''}</td>
-            <td>${escapeHtml(rit.van)}</td>
-            <td>${escapeHtml(rit.naar)}</td>
-            <td>${escapeHtml(rit.doel)}</td>
-            <td class="right">${formatKm(rit.km)}</td>
-            <td class="right">
-              <button class="secondary" onclick="ritBewerken('${rit.id}')">Bewerk</button>
-              <button class="danger" onclick="ritVerwijderen('${rit.id}')">Verwijder</button>
-            </td>
-          </tr>
-        `;
+        if (getoond.has(rit.id)) return;
+        getoond.add(rit.id);
+
+        if (rit.groepId) {
+          const groepRitten = ritenMaand
+            .filter(r => r.groepId === rit.groepId)
+            .sort((a, b) => a.groepVolgorde - b.groepVolgorde);
+          groepRitten.forEach(r => getoond.add(r.id));
+          const heenRitten = groepRitten.filter(r => !r.isRetour);
+          const retourRitten = groepRitten.filter(r => r.isRetour);
+          const totaalRows = groepRitten.length;
+          const totaalKmGroep = groepRitten.reduce((s, r) => s + r.km, 0);
+          const badges = [];
+          if (heenRitten.length > 1) badges.push('<span class="tussenstop-badge">Tussenstops</span>');
+          if (retourRitten.length > 0) badges.push('<span class="retour-badge">&#x21c4; Retour</span>');
+
+          groepRitten.forEach((r, i) => {
+            html += '<tr' + (r.isRetour ? ' class="retour-rij"' : '') + '>';
+            if (i === 0) {
+              html += `<td rowspan="${totaalRows}">${formatDatum(r.datum)}<br>${badges.join(' ')}</td>`;
+            }
+            html += `
+              <td>${escapeHtml(r.van)}</td>
+              <td>${escapeHtml(r.naar)}</td>
+              <td>${escapeHtml(r.doel)}</td>
+              <td class="right">${formatKm(r.km)}</td>
+            `;
+            if (i === 0) {
+              html += `
+                <td class="right" rowspan="${totaalRows}">
+                  <span class="acties">
+                    <button class="danger icon-btn" title="Verwijder" onclick="groepVerwijderen('${r.groepId}')">🗑️</button>
+                  </span>
+                </td>
+              `;
+            }
+            html += '</tr>';
+          });
+        } else if (rit.retourPaarId) {
+          const paar = ritenMaand.find(r => r.retourPaarId === rit.retourPaarId && r.id !== rit.id);
+          const heen = rit.retourRichting === 'heen' ? rit : paar;
+          const terug = rit.retourRichting === 'terug' ? rit : paar;
+          if (paar) getoond.add(paar.id);
+
+          if (heen) {
+            html += `
+              <tr>
+                <td rowspan="2">${formatDatum(heen.datum)}<br><span class="retour-badge">&#x21c4; Retour</span></td>
+                <td>${escapeHtml(heen.van)}</td>
+                <td>${escapeHtml(heen.naar)}</td>
+                <td>${escapeHtml(heen.doel)}</td>
+                <td class="right">${formatKm(heen.km)}</td>
+                <td class="right" rowspan="2">
+                  <span class="acties">
+                    <button class="secondary icon-btn" title="Bewerk" onclick="ritBewerken('${heen.id}')">✏️</button>
+                    <button class="danger icon-btn" title="Verwijder" onclick="retourVerwijderen('${heen.retourPaarId}')">🗑️</button>
+                  </span>
+                </td>
+              </tr>
+            `;
+          }
+          if (terug) {
+            html += `
+              <tr class="retour-rij">
+                <td>${escapeHtml(terug.van)}</td>
+                <td>${escapeHtml(terug.naar)}</td>
+                <td>${escapeHtml(terug.doel)}</td>
+                <td class="right">${formatKm(terug.km)}</td>
+              </tr>
+            `;
+          }
+        } else {
+          html += `
+            <tr>
+              <td>${formatDatum(rit.datum)}</td>
+              <td>${escapeHtml(rit.van)}</td>
+              <td>${escapeHtml(rit.naar)}</td>
+              <td>${escapeHtml(rit.doel)}</td>
+              <td class="right">${formatKm(rit.km)}</td>
+              <td class="right">
+                <span class="acties">
+                  <button class="secondary icon-btn" title="Bewerk" onclick="ritBewerken('${rit.id}')">✏️</button>
+                  <button class="danger icon-btn" title="Verwijder" onclick="ritVerwijderen('${rit.id}')">🗑️</button>
+                </span>
+              </td>
+            </tr>
+          `;
+        }
       });
     });
     html += '</table>';
@@ -833,6 +1398,11 @@
   renderOverzicht();
   renderStats();
   vulExportFilters();
+  adresAutocompleteKoppelen(document.getElementById('nieuwe-klant-adres'));
+  adresAutocompleteKoppelen(document.getElementById('thuisadres'));
+  adresAutocompleteKoppelen(document.getElementById('rit-van'));
+  adresAutocompleteKoppelen(document.getElementById('rit-naar'));
+  adresAutocompleteKoppelen(document.getElementById('rit-doel'), document.getElementById('rit-naar'));
 
   // Standaard datum van vandaag invullen
   document.getElementById('rit-datum').value = new Date().toISOString().slice(0, 10);
