@@ -1364,14 +1364,35 @@
     const gesorteerd = [...gefilterd].sort((a, b) => a.datum.localeCompare(b.datum));
 
     const rijen = [['Datum', 'Van', 'Naar', 'Kilometers', 'Vergoeding', 'Doel']];
+
+    const perMaand = new Map();
     gesorteerd.forEach(r => {
+      const d = new Date(r.datum);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!perMaand.has(key)) perMaand.set(key, []);
+      perMaand.get(key).push(r);
+    });
+
+    perMaand.forEach((maandRitten, key) => {
+      maandRitten.forEach(r => {
+        rijen.push([
+          formatDatum(r.datum),
+          r.van,
+          r.naar,
+          r.km.toFixed(1).replace('.', ','),
+          (r.km * tarief).toFixed(2).replace('.', ','),
+          r.doel
+        ]);
+      });
+      const totKm = maandRitten.reduce((s, r) => s + r.km, 0);
+      const totVergoeding = totKm * tarief;
       rijen.push([
-        formatDatum(r.datum),
-        r.van,
-        r.naar,
-        r.km.toFixed(1).replace('.', ','),
-        (r.km * tarief).toFixed(2).replace('.', ','),
-        r.doel
+        `Totaal ${maandNaam(Number(key.slice(0, 4)), Number(key.slice(5)) - 1)}`,
+        '',
+        '',
+        totKm.toFixed(1).replace('.', ','),
+        totVergoeding.toFixed(2).replace('.', ','),
+        ''
       ]);
     });
 
